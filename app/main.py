@@ -1,10 +1,14 @@
-import json
-
 from fastapi import Depends, FastAPI
 
-from . import config, ollama_client
+from . import config, history, ollama_client
 from .auth import require_secret
-from .schemas import GenerateRequest, GenerateResponse
+from .prompt import assemble_messages
+from .schemas import (
+    ClearHistoryRequest,
+    ClearHistoryResponse,
+    GenerateRequest,
+    GenerateResponse,
+)
 
 app = FastAPI()
 
@@ -25,23 +29,25 @@ async def healthz():
 
 @app.post("/generate", response_model=GenerateResponse, dependencies=[Depends(require_secret)])
 async def generate(req: GenerateRequest):
-    payload = json.dumps({
+    history_snapshot = await history.get_recent(req.channel_id)
+    await history.append(req.channel_id, role="user", name=req.display_name, content=req.content)
+
+    payload = {
         "user_id": req.user_id,
         "user_name": req.user_name,
         "display_name": req.display_name,
         "guild_id": req.guild_id,
         "channel_id": req.channel_id,
         "content": req.content,
-    })
-    messages = [
-        {"role": "system", "content": _persona},
-        {"role": "user", "content": payload},
-    ]
+    }
+    messages = assemble_messages(_persona, history_snapshot, lore_lines=[], payload=payload)
     reply = await ollama_client.chat(messages)
+
+    await history.append(req.channel_id, role="assistant", name="BoopBot", content=reply)
     return GenerateResponse(reply=reply)
 
 
-@app.post("/history/clear", dependencies=[Depends(require_secret)])
-async def clear_history(req: dict):
-    # Phase 2 will back this with real Redis-stored history; nothing persists yet.
-    return {"cleared": True}
+@app.post("/history/clear", response_model=ClearHistoryResponse, dependencies=[Depends(require_secret)])
+async def clear_history(req: ClearHistoryRequest):
+    await history.clear(req.channel_id)
+    return ClearHistoryResponse(cleared=True)

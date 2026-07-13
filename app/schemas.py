@@ -15,3 +15,11 @@ class GenerateRequest(BaseModel):
 
 class GenerateResponse(BaseModel):
     reply: Optional[str] = None
+
+
+class ClearHistoryRequest(BaseModel):
+    channel_id: int
+
+
+class ClearHistoryResponse(BaseModel):
+    cleared: bool
