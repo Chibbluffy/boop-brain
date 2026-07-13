@@ -1,0 +1,32 @@
+networks:
+  brain-net:
+    external: true # one-time setup: `docker network create brain-net`
+                    # then: `docker network connect brain-net <existing-qdrant-container-name>`
+
+services:
+  redis:
+    image: redis:7-alpine
+    container_name: boopbot-redis
+    restart: unless-stopped
+    networks: [brain-net]
+    volumes:
+      - redis-data:/data
+    command: ["redis-server", "--save", "60", "1"]
+
+  brain:
+    build: .
+    container_name: boopbot-brain
+    restart: unless-stopped
+    env_file: .env
+    networks: [brain-net]
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    ports:
+      - "10.8.0.200:8000:8000"
+    depends_on:
+      - redis
+    volumes:
+      - ./persona:/app/persona:ro
+
+volumes:
+  redis-data:
