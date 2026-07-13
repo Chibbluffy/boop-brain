@@ -1,4 +1,4 @@
-# brain-service
+# boop-brain
 
 Chat generation/orchestration service for BoopBot. Runs on the AI server (10.8.0.200), colocated with Ollama and Qdrant, reachable from the BoopBot process (on the Oracle VM) only over the WireGuard tunnel.
 
@@ -6,11 +6,11 @@ BoopBot sends a raw message + metadata to `/generate` and gets back either a rep
 
 ## One-time setup on the AI server
 
-1. `docker network create brain-net`
-2. `docker network connect brain-net <existing-qdrant-container-name>` — attaches the already-running Qdrant container to the network this compose project uses, without touching how it was started.
+1. `docker network create boop-brain`
+2. `docker network connect boop-brain <existing-qdrant-container-name>` — attaches the already-running Qdrant container to the network this compose project uses, without touching how it was started.
 3. Confirm whether Ollama is bare-metal or containerized on this host:
    - Bare-metal: leave `OLLAMA_BASE_URL=http://host.docker.internal:11434` in `.env` (already the default).
-   - Containerized: instead join it to `brain-net` and point `OLLAMA_BASE_URL` at its container name.
+   - Containerized: instead join it to `boop-brain` and point `OLLAMA_BASE_URL` at its container name.
 4. Pull the models referenced in `.env` (`OLLAMA_MODEL`, `OLLAMA_RELEVANCE_MODEL`, `OLLAMA_EMBED_MODEL`).
 5. Copy the bot's persona file to `persona/chatbot_context.txt` (currently lives only on the Oracle VM, untracked — this service will fail to start without it).
 6. `cp .env.example .env` and fill in real values, especially `BRAIN_SHARED_SECRET` (must match `BRAIN_SHARED_SECRET` in `BoopBot/.env`).
