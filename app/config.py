@@ -7,6 +7,7 @@ OLLAMA_BASE_URL       = os.getenv("OLLAMA_BASE_URL", "http://host.docker.interna
 OLLAMA_MODEL          = os.getenv("OLLAMA_MODEL", "llama3.1")
 OLLAMA_RELEVANCE_MODEL = os.getenv("OLLAMA_RELEVANCE_MODEL", OLLAMA_MODEL)
 OLLAMA_EMBED_MODEL    = os.getenv("OLLAMA_EMBED_MODEL", "nomic-embed-text")
+OLLAMA_NUM_CTX        = int(os.getenv("OLLAMA_NUM_CTX", "8192"))
 
 QDRANT_HOST        = os.getenv("QDRANT_HOST", "qdrant")
 QDRANT_PORT         = int(os.getenv("QDRANT_PORT", "6333"))

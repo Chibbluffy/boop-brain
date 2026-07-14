@@ -1,13 +1,24 @@
+import asyncio
+
 from fastapi import Depends, FastAPI
 
-from . import config, history, ollama_client
+from . import config, history, mem0_client, ollama_client
 from .auth import require_secret
+from .lore_ids import lore_text, resolve_short_id
 from .prompt import assemble_messages
 from .schemas import (
     ClearHistoryRequest,
     ClearHistoryResponse,
     GenerateRequest,
     GenerateResponse,
+    LoreAddMeRequest,
+    LoreAddRequest,
+    LoreAddResponse,
+    LoreEntry,
+    LoreForgetRequest,
+    LoreForgetResponse,
+    LoreListRequest,
+    LoreListResponse,
 )
 
 app = FastAPI()
@@ -27,10 +38,33 @@ async def healthz():
     return {"status": "ok"}
 
 
+async def _extract_and_store(guild_scope: str, user_content: str, reply: str) -> None:
+    try:
+        await mem0_client.add(
+            [{"role": "user", "content": user_content}, {"role": "assistant", "content": reply}],
+            agent_id=guild_scope,
+        )
+    except Exception as e:
+        print(f"[lore extraction failed] {e}")
+
+
 @app.post("/generate", response_model=GenerateResponse, dependencies=[Depends(require_secret)])
 async def generate(req: GenerateRequest):
     history_snapshot = await history.get_recent(req.channel_id)
     await history.append(req.channel_id, role="user", name=req.display_name, content=req.content)
+
+    if not req.is_mention:
+        should_reply = await ollama_client.gate2_check(history_snapshot, req.content)
+        if not should_reply:
+            return GenerateResponse(reply=None)
+
+    guild_scope = mem0_client.guild_scope(req.guild_id)
+    user_scope = mem0_client.user_scope(req.user_id)
+    guild_hits, user_hits = await asyncio.gather(
+        mem0_client.search(req.content, agent_id=guild_scope, limit=config.LORE_TOP_K),
+        mem0_client.search(req.content, user_id=user_scope, limit=config.LORE_TOP_K),
+    )
+    lore_lines = [lore_text(hit) for hit in guild_hits + user_hits]
 
     payload = {
         "user_id": req.user_id,
@@ -40,10 +74,11 @@ async def generate(req: GenerateRequest):
         "channel_id": req.channel_id,
         "content": req.content,
     }
-    messages = assemble_messages(_persona, history_snapshot, lore_lines=[], payload=payload)
+    messages = assemble_messages(_persona, history_snapshot, lore_lines=lore_lines, payload=payload)
     reply = await ollama_client.chat(messages)
 
     await history.append(req.channel_id, role="assistant", name="BoopBot", content=reply)
+    asyncio.create_task(_extract_and_store(guild_scope, req.content, reply))
     return GenerateResponse(reply=reply)
 
 
@@ -51,3 +86,48 @@ async def generate(req: GenerateRequest):
 async def clear_history(req: ClearHistoryRequest):
     await history.clear(req.channel_id)
     return ClearHistoryResponse(cleared=True)
+
+
+@app.post("/lore/add", response_model=LoreAddResponse, dependencies=[Depends(require_secret)])
+async def lore_add(req: LoreAddRequest):
+    result = await mem0_client.add(
+        [{"role": "user", "content": req.text}],
+        agent_id=mem0_client.guild_scope(req.guild_id),
+    )
+    return LoreAddResponse(id=mem0_client.first_id(result))
+
+
+@app.post("/lore/addme", response_model=LoreAddResponse, dependencies=[Depends(require_secret)])
+async def lore_addme(req: LoreAddMeRequest):
+    result = await mem0_client.add(
+        [{"role": "user", "content": req.text}],
+        user_id=mem0_client.user_scope(req.user_id),
+    )
+    return LoreAddResponse(id=mem0_client.first_id(result))
+
+
+@app.post("/lore/list", response_model=LoreListResponse, dependencies=[Depends(require_secret)])
+async def lore_list(req: LoreListRequest):
+    guild_hits, user_hits = await asyncio.gather(
+        mem0_client.get_all(agent_id=mem0_client.guild_scope(req.guild_id)),
+        mem0_client.get_all(user_id=mem0_client.user_scope(req.user_id)),
+    )
+    return LoreListResponse(
+        guild_lore=[LoreEntry(id=hit["id"], text=lore_text(hit)) for hit in guild_hits],
+        user_lore=[LoreEntry(id=hit["id"], text=lore_text(hit)) for hit in user_hits],
+    )
+
+
+@app.post("/lore/forget", response_model=LoreForgetResponse, dependencies=[Depends(require_secret)])
+async def lore_forget(req: LoreForgetRequest):
+    guild_hits, user_hits = await asyncio.gather(
+        mem0_client.get_all(agent_id=mem0_client.guild_scope(req.guild_id)),
+        mem0_client.get_all(user_id=mem0_client.user_scope(req.user_id)),
+    )
+    match = resolve_short_id(req.short_id, guild_hits + user_hits)
+    if match == "ambiguous":
+        return LoreForgetResponse(deleted=False, ambiguous=True)
+    if match is None:
+        return LoreForgetResponse(deleted=False)
+    await mem0_client.delete(match["id"])
+    return LoreForgetResponse(deleted=True, text=lore_text(match))

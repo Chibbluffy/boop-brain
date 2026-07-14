@@ -7,13 +7,13 @@ BoopBot sends a raw message + metadata to `/generate` and gets back either a rep
 ## One-time setup on the AI server
 
 1. `docker network create boop-brain`
-2. `docker network connect boop-brain <existing-qdrant-container-name>` — attaches the already-running Qdrant container to the network this compose project uses, without touching how it was started.
+2. `docker network connect --alias qdrant boop-brain <existing-qdrant-container-name>` — attaches the already-running Qdrant container to the network this compose project uses (without touching how it was started) and gives it the network alias `qdrant`, so it resolves under that name regardless of its actual container name. `QDRANT_HOST=qdrant` in `.env` relies on this alias.
 3. Confirm whether Ollama is bare-metal or containerized on this host:
    - Bare-metal: leave `OLLAMA_BASE_URL=http://host.docker.internal:11434` in `.env` (already the default).
    - Containerized: instead join it to `boop-brain` and point `OLLAMA_BASE_URL` at its container name.
-4. Pull the models referenced in `.env` (`OLLAMA_MODEL`, `OLLAMA_RELEVANCE_MODEL`, `OLLAMA_EMBED_MODEL`).
+4. Pull the models referenced in `.env` (`OLLAMA_MODEL`, `OLLAMA_RELEVANCE_MODEL`, `OLLAMA_EMBED_MODEL`) — the embed model is needed for mem0/Qdrant lore search.
 5. Copy the bot's persona file to `persona/chatbot_context.txt` (currently lives only on the Oracle VM, untracked — this service will fail to start without it).
-6. `cp .env.example .env` and fill in real values, especially `BRAIN_SHARED_SECRET` (must match `BRAIN_SHARED_SECRET` in `BoopBot/.env`).
+6. `cp .env.example .env` and fill in real values, especially `BRAIN_SHARED_SECRET` (must match `BRAIN_SHARED_SECRET` in `BoopBot/.env`) and `QDRANT_EMBED_DIMS` (must match `OLLAMA_EMBED_MODEL`'s actual output dimension, or Qdrant inserts will fail).
 
 ## Running
 

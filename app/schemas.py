@@ -23,3 +23,46 @@ class ClearHistoryRequest(BaseModel):
 
 class ClearHistoryResponse(BaseModel):
     cleared: bool
+
+
+class LoreAddRequest(BaseModel):
+    guild_id: int
+    text: str
+    added_by_user_id: int
+    added_by_name: str
+
+
+class LoreAddMeRequest(BaseModel):
+    user_id: int
+    text: str
+
+
+class LoreAddResponse(BaseModel):
+    id: Optional[str] = None
+
+
+class LoreEntry(BaseModel):
+    id: str
+    text: str
+
+
+class LoreListRequest(BaseModel):
+    guild_id: int
+    user_id: int
+
+
+class LoreListResponse(BaseModel):
+    guild_lore: list[LoreEntry]
+    user_lore: list[LoreEntry]
+
+
+class LoreForgetRequest(BaseModel):
+    guild_id: int
+    user_id: int
+    short_id: str
+
+
+class LoreForgetResponse(BaseModel):
+    deleted: bool
+    ambiguous: bool = False
+    text: Optional[str] = None

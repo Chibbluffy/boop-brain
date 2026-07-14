@@ -6,7 +6,7 @@ _client = ollama.AsyncClient(host=config.OLLAMA_BASE_URL)
 
 
 async def chat(messages: list[dict], model: str = config.OLLAMA_MODEL) -> str:
-    response = await _client.chat(model=model, messages=messages)
+    response = await _client.chat(model=model, messages=messages, options={"num_ctx": config.OLLAMA_NUM_CTX})
     return response["message"]["content"]
 
 
