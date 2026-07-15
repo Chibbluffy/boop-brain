@@ -28,6 +28,7 @@ Binds port 8000 only on the WireGuard interface (`10.8.0.200:8000`), not the pub
 
 - `POST /generate` — main chat + jump-in path. Routes each request to either the fast model or the smart model (see below) and returns a reply, or `null` if gate 2 declined a jump-in.
 - `POST /lore/add` / `/lore/addme` / `/lore/list` / `/lore/forget` — manual lore management, backing `!lore` Discord commands. Admin gating for `!lore add` happens bot-side before this is ever called; `/lore/forget` additionally trusts a bot-supplied `is_admin` flag to refuse deleting guild-scoped entries for non-admins (personal entries are always deletable by their own owner).
+- `POST /lore/guild/list` / `/lore/user/list` / `/lore/update` / `/lore/delete` — used by the boop.fish website's admin Lore settings page (not Discord). Unlike `/lore/list`, these return one scope at a time (no guild+user mixing) and operate on exact `memory_id` UUIDs rather than Discord's short-id-prefix scheme — the short-id resolution in `app/lore_ids.py` exists purely for Discord's manual-typing constraint and isn't needed here. These endpoints trust the caller to have already enforced its own permissions (the website gates its entire Lore section to admins before ever calling here), so there's no `is_admin` flag on this side.
 - `POST /history/clear` — clears a channel's rolling history (backs `!resetchat`).
 - `GET /healthz`
 

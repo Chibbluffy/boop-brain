@@ -69,3 +69,28 @@ class LoreForgetResponse(BaseModel):
     ambiguous: bool = False
     forbidden: bool = False
     text: Optional[str] = None
+
+
+class LoreGuildListRequest(BaseModel):
+    guild_id: int
+
+
+class LoreUserListRequest(BaseModel):
+    user_id: int
+
+
+class LoreUpdateRequest(BaseModel):
+    memory_id: str
+    text: str
+
+
+class LoreUpdateResponse(BaseModel):
+    updated: bool
+
+
+class LoreDeleteRequest(BaseModel):
+    memory_id: str
+
+
+class LoreDeleteResponse(BaseModel):
+    deleted: bool

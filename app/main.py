@@ -14,11 +14,17 @@ from .schemas import (
     LoreAddMeRequest,
     LoreAddRequest,
     LoreAddResponse,
+    LoreDeleteRequest,
+    LoreDeleteResponse,
     LoreEntry,
     LoreForgetRequest,
     LoreForgetResponse,
+    LoreGuildListRequest,
     LoreListRequest,
     LoreListResponse,
+    LoreUpdateRequest,
+    LoreUpdateResponse,
+    LoreUserListRequest,
 )
 
 app = FastAPI()
@@ -149,3 +155,27 @@ async def lore_forget(req: LoreForgetRequest):
         return LoreForgetResponse(deleted=False, forbidden=True)
     await mem0_client.delete(match["id"])
     return LoreForgetResponse(deleted=True, text=lore_text(match))
+
+
+@app.post("/lore/guild/list", response_model=list[LoreEntry], dependencies=[Depends(require_secret)])
+async def lore_guild_list(req: LoreGuildListRequest):
+    hits = await mem0_client.get_all(agent_id=mem0_client.guild_scope(req.guild_id))
+    return [LoreEntry(id=hit["id"], text=lore_text(hit)) for hit in hits]
+
+
+@app.post("/lore/user/list", response_model=list[LoreEntry], dependencies=[Depends(require_secret)])
+async def lore_user_list(req: LoreUserListRequest):
+    hits = await mem0_client.get_all(user_id=mem0_client.user_scope(req.user_id))
+    return [LoreEntry(id=hit["id"], text=lore_text(hit)) for hit in hits]
+
+
+@app.post("/lore/update", response_model=LoreUpdateResponse, dependencies=[Depends(require_secret)])
+async def lore_update(req: LoreUpdateRequest):
+    await mem0_client.update(req.memory_id, req.text)
+    return LoreUpdateResponse(updated=True)
+
+
+@app.post("/lore/delete", response_model=LoreDeleteResponse, dependencies=[Depends(require_secret)])
+async def lore_delete(req: LoreDeleteRequest):
+    await mem0_client.delete(req.memory_id)
+    return LoreDeleteResponse(deleted=True)

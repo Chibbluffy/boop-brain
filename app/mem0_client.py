@@ -95,6 +95,11 @@ async def delete(memory_id: str) -> None:
     await asyncio.to_thread(memory.delete, memory_id=memory_id)
 
 
+async def update(memory_id: str, text: str) -> None:
+    memory = _get_memory()
+    await asyncio.to_thread(memory.update, memory_id=memory_id, text=text)
+
+
 def first_id(add_result) -> Optional[str]:
     results = _unwrap(add_result)
     return results[0]["id"] if results else None
