@@ -43,7 +43,7 @@ Every `/generate` call is classified by `app/heuristics.py` before generating �
 |---|---|
 | Image attached | `image_urls` non-empty (bot sends Discord CDN URLs; this service downloads + base64-encodes them itself, right before calling Ollama — see `app/images.py`) |
 | A link in the message | URL regex |
-| Explicit search intent | keyword list — "search up/for", "look up", "google", etc. (`heuristics.SEARCH_RE`) |
+| Explicit search intent | either a search verb ("search up/for", "look up", "find out", "check on", etc.) **or** a recency word ("latest", "newest", "today's", "recently", etc.) — the recency check exists because enumerating every possible search verb in natural English is a losing battle; "the latest X" needs a real lookup no matter how it's phrased (`heuristics.SEARCH_RE`) |
 | Other question-like phrasing | keyword list — "what is", "who is", "ping", etc. (`heuristics.QUESTION_RE`) |
 
 - **No signal** → `OLLAMA_MODEL` (fast default, e.g. `llama3.2:3b`), plain generation, same as today.
