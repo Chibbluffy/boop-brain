@@ -10,6 +10,7 @@ OLLAMA_EMBED_MODEL    = os.getenv("OLLAMA_EMBED_MODEL", "nomic-embed-text")
 OLLAMA_NUM_CTX        = int(os.getenv("OLLAMA_NUM_CTX", "8192"))
 OLLAMA_SMART_MODEL    = os.getenv("OLLAMA_SMART_MODEL", OLLAMA_MODEL)
 OLLAMA_SMART_NUM_CTX  = int(os.getenv("OLLAMA_SMART_NUM_CTX", "16384"))
+OLLAMA_MAX_REPLY_TOKENS = int(os.getenv("OLLAMA_MAX_REPLY_TOKENS", "220"))
 
 BRAVE_API_KEY       = os.getenv("BRAVE_API_KEY", "")
 TOOL_MAX_ROUNDS     = int(os.getenv("TOOL_MAX_ROUNDS", "3"))

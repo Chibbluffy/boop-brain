@@ -6,11 +6,17 @@ _client = ollama.AsyncClient(host=config.OLLAMA_BASE_URL)
 
 
 async def chat(messages: list[dict], model: str = config.OLLAMA_MODEL) -> str:
-    response = await _client.chat(model=model, messages=messages, options={"num_ctx": config.OLLAMA_NUM_CTX})
+    response = await _client.chat(
+        model=model, messages=messages,
+        options={"num_ctx": config.OLLAMA_NUM_CTX, "num_predict": config.OLLAMA_MAX_REPLY_TOKENS},
+    )
     return response["message"]["content"]
 
 
 async def chat_raw(messages: list[dict], model: str, tools: list[dict] = None, num_ctx: int = None) -> dict:
+    # No num_predict cap here — this backs the smart/tool-calling path (search,
+    # page-reading, summarizing), which needs room to give a complete answer.
+    # The cap only applies to chat()'s ordinary fast-path conversation replies.
     kwargs = {
         "model": model,
         "messages": messages,
