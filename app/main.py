@@ -83,15 +83,10 @@ async def generate(req: GenerateRequest):
     )
     lore_lines = [lore_text(hit) for hit in guild_hits + user_hits]
 
-    payload = {
-        "user_id": req.user_id,
-        "user_name": req.user_name,
-        "display_name": req.display_name,
-        "guild_id": req.guild_id,
-        "channel_id": req.channel_id,
-        "content": req.content,
-    }
-    messages = assemble_messages(_persona, history_snapshot, lore_lines=lore_lines, payload=payload)
+    messages = assemble_messages(
+        _persona, history_snapshot, lore_lines=lore_lines,
+        display_name=req.display_name, content=req.content,
+    )
     if reason:
         image_b64_list = await images.fetch_images_b64(req.image_urls)
         if image_b64_list:
