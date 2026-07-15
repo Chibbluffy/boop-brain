@@ -5,3 +5,5 @@ ollama
 redis
 pydantic
 python-dotenv
+beautifulsoup4
+aiohttp

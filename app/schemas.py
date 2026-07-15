@@ -11,6 +11,7 @@ class GenerateRequest(BaseModel):
     display_name: str
     content: str
     is_mention: bool
+    image_urls: list[str] = []
 
 
 class GenerateResponse(BaseModel):

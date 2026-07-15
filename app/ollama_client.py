@@ -10,6 +10,17 @@ async def chat(messages: list[dict], model: str = config.OLLAMA_MODEL) -> str:
     return response["message"]["content"]
 
 
+async def chat_raw(messages: list[dict], model: str, tools: list[dict] = None, num_ctx: int = None) -> dict:
+    kwargs = {
+        "model": model,
+        "messages": messages,
+        "options": {"num_ctx": num_ctx or config.OLLAMA_NUM_CTX},
+    }
+    if tools:
+        kwargs["tools"] = tools
+    return await _client.chat(**kwargs)
+
+
 async def gate2_check(history: list[dict], candidate_content: str) -> bool:
     transcript = "\n".join(f"{turn['name']}: {turn['content']}" for turn in history[-8:])
     messages = [

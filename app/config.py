@@ -8,6 +8,12 @@ OLLAMA_MODEL          = os.getenv("OLLAMA_MODEL", "llama3.1")
 OLLAMA_RELEVANCE_MODEL = os.getenv("OLLAMA_RELEVANCE_MODEL", OLLAMA_MODEL)
 OLLAMA_EMBED_MODEL    = os.getenv("OLLAMA_EMBED_MODEL", "nomic-embed-text")
 OLLAMA_NUM_CTX        = int(os.getenv("OLLAMA_NUM_CTX", "8192"))
+OLLAMA_SMART_MODEL    = os.getenv("OLLAMA_SMART_MODEL", OLLAMA_MODEL)
+OLLAMA_SMART_NUM_CTX  = int(os.getenv("OLLAMA_SMART_NUM_CTX", "16384"))
+
+BRAVE_API_KEY       = os.getenv("BRAVE_API_KEY", "")
+TOOL_MAX_ROUNDS     = int(os.getenv("TOOL_MAX_ROUNDS", "3"))
+FETCH_URL_MAX_CHARS = int(os.getenv("FETCH_URL_MAX_CHARS", "4000"))
 
 QDRANT_HOST        = os.getenv("QDRANT_HOST", "qdrant")
 QDRANT_PORT         = int(os.getenv("QDRANT_PORT", "6333"))

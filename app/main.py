@@ -2,7 +2,7 @@ import asyncio
 
 from fastapi import Depends, FastAPI
 
-from . import config, history, mem0_client, ollama_client
+from . import config, heuristics, history, images, mem0_client, ollama_client, tool_loop
 from .auth import require_secret
 from .lore_ids import lore_text, resolve_short_id
 from .prompt import assemble_messages
@@ -58,6 +58,9 @@ async def generate(req: GenerateRequest):
         if not should_reply:
             return GenerateResponse(reply=None)
 
+    reason = heuristics.detect_escalation(req.content, req.image_urls)
+    print(f"[route] channel={req.channel_id} escalate={reason}")
+
     guild_scope = mem0_client.guild_scope(req.guild_id)
     user_scope = mem0_client.user_scope(req.user_id)
     guild_hits, user_hits = await asyncio.gather(
@@ -75,7 +78,13 @@ async def generate(req: GenerateRequest):
         "content": req.content,
     }
     messages = assemble_messages(_persona, history_snapshot, lore_lines=lore_lines, payload=payload)
-    reply = await ollama_client.chat(messages)
+    if reason:
+        image_b64_list = await images.fetch_images_b64(req.image_urls)
+        if image_b64_list:
+            messages[-1]["images"] = image_b64_list
+        reply = await tool_loop.run_smart_chat(messages)
+    else:
+        reply = await ollama_client.chat(messages)
 
     await history.append(req.channel_id, role="assistant", name="BoopBot", content=reply)
     asyncio.create_task(_extract_and_store(guild_scope, req.content, reply))
