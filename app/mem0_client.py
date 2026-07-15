@@ -13,7 +13,10 @@ def _build_config() -> dict:
         "llm": {
             "provider": "ollama",
             "config": {
-                "model": config.OLLAMA_MODEL,
+                # Uses the smart model, not the fast default — mem0's own add() reasoning
+                # decides ADD/UPDATE/NONE against existing memories (its built-in dedup
+                # mechanism), and that judgment benefits from the stronger model.
+                "model": config.OLLAMA_SMART_MODEL,
                 "temperature": 0.2,
                 "max_tokens": 2000,
                 "ollama_base_url": config.OLLAMA_BASE_URL,

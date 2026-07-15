@@ -94,3 +94,21 @@ class LoreDeleteRequest(BaseModel):
 
 class LoreDeleteResponse(BaseModel):
     deleted: bool
+
+
+class LoreScanDuplicatesRequest(BaseModel):
+    guild_id: int
+
+
+class LoreDuplicatePairEntry(BaseModel):
+    id: str
+    text: str
+
+
+class LoreDuplicatePair(BaseModel):
+    a: LoreDuplicatePairEntry
+    b: LoreDuplicatePairEntry
+
+
+class LoreScanDuplicatesResponse(BaseModel):
+    pairs: list[LoreDuplicatePair]

@@ -2,7 +2,7 @@ import asyncio
 
 from fastapi import Depends, FastAPI
 
-from . import config, heuristics, history, images, mem0_client, ollama_client, tool_loop
+from . import config, dedup, heuristics, history, images, mem0_client, ollama_client, tool_loop
 from .auth import require_secret
 from .lore_ids import lore_text, resolve_short_id
 from .prompt import assemble_messages
@@ -22,6 +22,8 @@ from .schemas import (
     LoreGuildListRequest,
     LoreListRequest,
     LoreListResponse,
+    LoreScanDuplicatesRequest,
+    LoreScanDuplicatesResponse,
     LoreUpdateRequest,
     LoreUpdateResponse,
     LoreUserListRequest,
@@ -179,3 +181,9 @@ async def lore_update(req: LoreUpdateRequest):
 async def lore_delete(req: LoreDeleteRequest):
     await mem0_client.delete(req.memory_id)
     return LoreDeleteResponse(deleted=True)
+
+
+@app.post("/lore/guild/scan_duplicates", response_model=LoreScanDuplicatesResponse, dependencies=[Depends(require_secret)])
+async def lore_scan_duplicates(req: LoreScanDuplicatesRequest):
+    pairs = await dedup.find_duplicate_pairs(req.guild_id)
+    return LoreScanDuplicatesResponse(pairs=pairs)
