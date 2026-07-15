@@ -80,9 +80,26 @@ async def search(query: str, *, agent_id: str = None, user_id: str = None, limit
     return _unwrap(result)
 
 
+# mem0 treats agent_id-without-user_id as "facts about the agent itself" and biases
+# its extraction prompt accordingly (confirmed against mem0's actual source: passing
+# agent_id alone appends an agent-focused instruction suffix). We use agent_id as a
+# stand-in for "this guild's shared knowledge," not "facts about the bot," so that
+# default bias is backwards for us — override it explicitly whenever agent_id is used
+# alone (both auto-extraction and manual !lore add / website adds go through here).
+_GUILD_EXTRACTION_PROMPT = (
+    "Extract any notable facts mentioned in this conversation about people, events, "
+    "or the community — not just facts about yourself as the assistant. Include "
+    "relationships, possessions, characteristics, preferences, or notable events "
+    "involving anyone mentioned by name."
+)
+
+
 async def add(messages: list[dict], *, agent_id: str = None, user_id: str = None) -> dict:
     memory = _get_memory()
-    return await asyncio.to_thread(memory.add, messages=messages, agent_id=agent_id, user_id=user_id)
+    prompt = _GUILD_EXTRACTION_PROMPT if agent_id and not user_id else None
+    return await asyncio.to_thread(
+        memory.add, messages=messages, agent_id=agent_id, user_id=user_id, prompt=prompt
+    )
 
 
 async def get_all(*, agent_id: str = None, user_id: str = None) -> list[dict]:
