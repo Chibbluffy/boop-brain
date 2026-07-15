@@ -12,6 +12,8 @@ _QUESTION_PATTERNS = [
     r"\bsearch\s+for\b", r"\blook\s+up\b", r"\bgoogle\b",
     r"\bcan\s+you\s+(find|search|look\s*up)\b",
     r"\bwhat\s+happened\b",
+    r"\bping\b",  # correctly looking up a name -> exact snowflake ID is an indirection
+                  # task the fast model is unreliable at; escalate for a better shot at it
 ]
 QUESTION_RE = re.compile("|".join(_QUESTION_PATTERNS), re.IGNORECASE)
 
