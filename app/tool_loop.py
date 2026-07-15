@@ -4,7 +4,20 @@ from . import config, ollama_client, tools as tool_exec
 from .tool_schemas import TOOLS
 
 
+_TOOL_USE_INSTRUCTION = {
+    "role": "system",
+    "content": (
+        "You have access to search_web and fetch_url tools. Your own training data can be outdated "
+        "or wrong, especially for anything time-sensitive. For questions about current events, "
+        "the newest/latest/most recent version of anything, patch notes, prices, or any claim you are "
+        "not fully certain of, you must use search_web to verify before answering — do not guess from "
+        "memory. Only answer directly, without a tool, for things that are stable and unambiguous."
+    ),
+}
+
+
 async def run_smart_chat(messages: list[dict]) -> str:
+    messages = [_TOOL_USE_INSTRUCTION, *messages]
     for round_num in range(config.TOOL_MAX_ROUNDS):
         response = await ollama_client.chat_raw(
             messages, model=config.OLLAMA_SMART_MODEL, tools=TOOLS,
