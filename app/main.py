@@ -2,7 +2,7 @@ import asyncio
 
 from fastapi import Depends, FastAPI
 
-from . import brave_search, config, dedup, heuristics, history, images, mem0_client, ollama_client, tool_loop
+from . import brave_search, config, dedup, heuristics, history, idle_sweep, images, mem0_client, ollama_client, summarize, tool_loop
 from .auth import require_secret
 from .lore_ids import lore_text, resolve_short_id
 from .prompt import assemble_messages
@@ -27,6 +27,8 @@ from .schemas import (
     LoreUpdateRequest,
     LoreUpdateResponse,
     LoreUserListRequest,
+    SummarizeChannelRequest,
+    SummarizeChannelResponse,
 )
 
 app = FastAPI()
@@ -39,6 +41,7 @@ async def load_persona():
     global _persona
     with open(config.CHATBOT_CONTEXT_FILE, "r") as f:
         _persona = f.read()
+    asyncio.create_task(idle_sweep.run_idle_sweep_loop())
 
 
 @app.get("/healthz")
@@ -66,6 +69,7 @@ async def _extract_and_store(guild_scope: str, user_content: str, reply: str) ->
 async def generate(req: GenerateRequest):
     history_snapshot = await history.get_recent(req.channel_id)
     await history.append(req.channel_id, role="user", name=req.display_name, content=req.content)
+    await history.set_channel_guild(req.channel_id, req.guild_id)
 
     if not req.is_mention:
         should_reply = await ollama_client.gate2_check(history_snapshot, req.content)
@@ -191,3 +195,15 @@ async def lore_delete(req: LoreDeleteRequest):
 async def lore_scan_duplicates(req: LoreScanDuplicatesRequest):
     pairs = await dedup.find_duplicate_pairs(req.guild_id)
     return LoreScanDuplicatesResponse(pairs=pairs)
+
+
+@app.post("/lore/summarize_channel", response_model=SummarizeChannelResponse, dependencies=[Depends(require_secret)])
+async def summarize_channel_endpoint(req: SummarizeChannelRequest):
+    # Manual trigger — always summarizes on demand, regardless of the automatic
+    # idle-sweep's "already summarized this idle period" marker.
+    conversation = await history.get_recent(req.channel_id)
+    generated_summary = await summarize.summarize_conversation(conversation)
+    if not generated_summary:
+        return SummarizeChannelResponse(summarized=False)
+    await summarize.store_summary(req.guild_id, generated_summary)
+    return SummarizeChannelResponse(summarized=True, summary=generated_summary)

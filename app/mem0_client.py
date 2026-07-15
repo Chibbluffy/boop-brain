@@ -94,11 +94,20 @@ _GUILD_EXTRACTION_PROMPT = (
 )
 
 
-async def add(messages: list[dict], *, agent_id: str = None, user_id: str = None) -> dict:
+async def add(
+    messages: list[dict], *, agent_id: str = None, user_id: str = None,
+    infer: bool = True, metadata: dict = None,
+) -> dict:
     memory = _get_memory()
-    prompt = _GUILD_EXTRACTION_PROMPT if agent_id and not user_id else None
+    # infer=False stores the given content directly as a memory, skipping mem0's own
+    # extraction/dedup LLM reasoning entirely — used for conversation summaries, where
+    # we've already decided what's worth keeping ourselves and don't need mem0 to
+    # re-decide (and don't want to inherit whatever's currently unreliable about its
+    # automatic extraction for the atomic-fact path).
+    prompt = _GUILD_EXTRACTION_PROMPT if (infer and agent_id and not user_id) else None
     return await asyncio.to_thread(
-        memory.add, messages=messages, agent_id=agent_id, user_id=user_id, prompt=prompt
+        memory.add, messages=messages, agent_id=agent_id, user_id=user_id,
+        infer=infer, metadata=metadata, prompt=prompt,
     )
 
 

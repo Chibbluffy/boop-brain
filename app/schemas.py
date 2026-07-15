@@ -112,3 +112,13 @@ class LoreDuplicatePair(BaseModel):
 
 class LoreScanDuplicatesResponse(BaseModel):
     pairs: list[LoreDuplicatePair]
+
+
+class SummarizeChannelRequest(BaseModel):
+    guild_id: int
+    channel_id: int
+
+
+class SummarizeChannelResponse(BaseModel):
+    summarized: bool
+    summary: Optional[str] = None

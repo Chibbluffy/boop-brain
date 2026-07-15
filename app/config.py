@@ -28,5 +28,12 @@ HISTORY_MAX_TURNS   = int(os.getenv("HISTORY_MAX_TURNS", "12"))
 HISTORY_TTL_SECONDS = int(os.getenv("HISTORY_TTL_SECONDS", "21600"))
 LORE_TOP_K          = int(os.getenv("LORE_TOP_K", "5"))
 
+# How often the background sweep checks for idle channels, and how much remaining
+# history TTL counts as "about to expire" (i.e. summarize now, before it's gone).
+# The threshold should stay comfortably larger than the interval, or a channel could
+# slip from "not yet idle" to "already expired" between two sweeps.
+IDLE_SWEEP_INTERVAL_SECONDS    = int(os.getenv("IDLE_SWEEP_INTERVAL_SECONDS", "300"))
+IDLE_SUMMARY_THRESHOLD_SECONDS = int(os.getenv("IDLE_SUMMARY_THRESHOLD_SECONDS", "600"))
+
 CHATBOT_CONTEXT_FILE = os.getenv("CHATBOT_CONTEXT_FILE", "/app/persona/chatbot_context.txt")
 BRAIN_SHARED_SECRET  = os.getenv("BRAIN_SHARED_SECRET", "")
