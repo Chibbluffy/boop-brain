@@ -61,9 +61,11 @@ class LoreForgetRequest(BaseModel):
     guild_id: int
     user_id: int
     short_id: str
+    is_admin: bool = False
 
 
 class LoreForgetResponse(BaseModel):
     deleted: bool
     ambiguous: bool = False
+    forbidden: bool = False
     text: Optional[str] = None

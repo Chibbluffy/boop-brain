@@ -40,10 +40,16 @@ async def healthz():
 
 async def _extract_and_store(guild_scope: str, user_content: str, reply: str) -> None:
     try:
-        await mem0_client.add(
+        result = await mem0_client.add(
             [{"role": "user", "content": user_content}, {"role": "assistant", "content": reply}],
             agent_id=guild_scope,
         )
+        added = result.get("results", []) if isinstance(result, dict) else (result or [])
+        if added:
+            print(f"[lore auto-extract] {guild_scope}: {len(added)} memor{'y' if len(added) == 1 else 'ies'} "
+                  f"{[a.get('event', '?') for a in added]}: {[a.get('memory', '') for a in added]}")
+        else:
+            print(f"[lore auto-extract] {guild_scope}: nothing extracted from this exchange")
     except Exception as e:
         print(f"[lore extraction failed] {e}")
 
@@ -138,5 +144,8 @@ async def lore_forget(req: LoreForgetRequest):
         return LoreForgetResponse(deleted=False, ambiguous=True)
     if match is None:
         return LoreForgetResponse(deleted=False)
+    is_guild_entry = any(match["id"] == hit["id"] for hit in guild_hits)
+    if is_guild_entry and not req.is_admin:
+        return LoreForgetResponse(deleted=False, forbidden=True)
     await mem0_client.delete(match["id"])
     return LoreForgetResponse(deleted=True, text=lore_text(match))

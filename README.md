@@ -27,7 +27,7 @@ Binds port 8000 only on the WireGuard interface (`10.8.0.200:8000`), not the pub
 ## Endpoints
 
 - `POST /generate` — main chat + jump-in path. Routes each request to either the fast model or the smart model (see below) and returns a reply, or `null` if gate 2 declined a jump-in.
-- `POST /lore/add` / `/lore/addme` / `/lore/list` / `/lore/forget` — manual lore management, backing `!lore` Discord commands.
+- `POST /lore/add` / `/lore/addme` / `/lore/list` / `/lore/forget` — manual lore management, backing `!lore` Discord commands. Admin gating for `!lore add` happens bot-side before this is ever called; `/lore/forget` additionally trusts a bot-supplied `is_admin` flag to refuse deleting guild-scoped entries for non-admins (personal entries are always deletable by their own owner).
 - `POST /history/clear` — clears a channel's rolling history (backs `!resetchat`).
 - `GET /healthz`
 
