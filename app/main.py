@@ -2,7 +2,7 @@ import asyncio
 
 from fastapi import Depends, FastAPI
 
-from . import config, dedup, heuristics, history, images, mem0_client, ollama_client, tool_loop
+from . import brave_search, config, dedup, heuristics, history, images, mem0_client, ollama_client, tool_loop
 from .auth import require_secret
 from .lore_ids import lore_text, resolve_short_id
 from .prompt import assemble_messages
@@ -87,6 +87,15 @@ async def generate(req: GenerateRequest):
         _persona, history_snapshot, lore_lines=lore_lines,
         display_name=req.display_name, content=req.content,
     )
+    if reason == "search":
+        # Don't leave this to the model's discretion — it has shown it'll sometimes
+        # narrate a fake search instead of actually calling the tool. Fetch real
+        # results ourselves and hand them over already-baked into the prompt.
+        try:
+            results = await brave_search.search_web(req.content)
+            messages.insert(1, {"role": "system", "content": f"Live search results:\n{results}"})
+        except Exception as e:
+            print(f"[search] pre-fetch failed: {e}")
     if reason:
         image_b64_list = await images.fetch_images_b64(req.image_urls)
         if image_b64_list:

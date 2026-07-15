@@ -43,12 +43,15 @@ Every `/generate` call is classified by `app/heuristics.py` before generating �
 |---|---|
 | Image attached | `image_urls` non-empty (bot sends Discord CDN URLs; this service downloads + base64-encodes them itself, right before calling Ollama — see `app/images.py`) |
 | A link in the message | URL regex |
-| Question/search-like phrasing | keyword list — "what is", "who is", "search for", "look up", etc. |
+| Explicit search intent | keyword list — "search up/for", "look up", "google", etc. (`heuristics.SEARCH_RE`) |
+| Other question-like phrasing | keyword list — "what is", "who is", "ping", etc. (`heuristics.QUESTION_RE`) |
 
 - **No signal** → `OLLAMA_MODEL` (fast default, e.g. `llama3.2:3b`), plain generation, same as today.
-- **Any signal** → `OLLAMA_SMART_MODEL` (e.g. `qwen3-vl:8b`) via `app/tool_loop.py`, which gives the model two tools it can choose to invoke (or not — providing the schema doesn't force use):
+- **Any signal** → `OLLAMA_SMART_MODEL` (e.g. `qwen3-vl:8b`) via `app/tool_loop.py`, which gives the model two tools it can choose to invoke:
   - `search_web` — live web search via the Brave Search API (`app/brave_search.py`, needs `BRAVE_API_KEY`).
   - `fetch_url` — fetches and reads a specific webpage's text content (`app/web_fetch.py`, BeautifulSoup-based, truncated to `FETCH_URL_MAX_CHARS`).
+
+  For the **"search"** reason specifically, `main.py` does **not** leave this to the model's discretion — it calls `search_web` itself and injects the results directly into the prompt before generating. This is deliberate: Ollama's tool-calling has no `tool_choice`-style way to *require* a call, and the model has been observed narrating a fake search ("I've looked it up... it's X") without ever actually invoking the tool. Pre-fetching for explicit search requests guarantees real results are in context regardless of whether the model also chooses to call the tool itself (e.g. to follow up with `fetch_url` on a specific result).
 
   The loop runs up to `TOOL_MAX_ROUNDS` rounds of tool-call → execute → feed result back, then forces a final plain-text answer if it hasn't converged. Tool-call/tool-result exchanges are **never** written to Redis history — only the original message and the final reply get stored, so they don't bloat future prompts (fast-path included).
 
