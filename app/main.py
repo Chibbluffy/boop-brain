@@ -27,8 +27,8 @@ from .schemas import (
     LoreUpdateRequest,
     LoreUpdateResponse,
     LoreUserListRequest,
-    SummarizeChannelRequest,
-    SummarizeChannelResponse,
+    SummarizeResponse,
+    SummarizeTranscriptRequest,
 )
 
 app = FastAPI()
@@ -197,13 +197,15 @@ async def lore_scan_duplicates(req: LoreScanDuplicatesRequest):
     return LoreScanDuplicatesResponse(pairs=pairs)
 
 
-@app.post("/lore/summarize_channel", response_model=SummarizeChannelResponse, dependencies=[Depends(require_secret)])
-async def summarize_channel_endpoint(req: SummarizeChannelRequest):
-    # Manual trigger — always summarizes on demand, regardless of the automatic
-    # idle-sweep's "already summarized this idle period" marker.
-    conversation = await history.get_recent(req.channel_id)
+@app.post("/lore/summarize_transcript", response_model=SummarizeResponse, dependencies=[Depends(require_secret)])
+async def summarize_transcript_endpoint(req: SummarizeTranscriptRequest):
+    # Manual trigger, backing `!lore summarize` — the bot fetches real Discord channel
+    # history itself (not our Redis bot-conversation cache) and sends the reconstructed
+    # transcript here directly, so this works in channels BoopBot has never participated
+    # in. Always runs on demand, independent of the automatic idle-sweep's own marker.
+    conversation = [{"name": m.name, "content": m.content} for m in req.messages]
     generated_summary = await summarize.summarize_conversation(conversation)
     if not generated_summary:
-        return SummarizeChannelResponse(summarized=False)
+        return SummarizeResponse(summarized=False)
     await summarize.store_summary(req.guild_id, generated_summary)
-    return SummarizeChannelResponse(summarized=True, summary=generated_summary)
+    return SummarizeResponse(summarized=True, summary=generated_summary)

@@ -114,11 +114,16 @@ class LoreScanDuplicatesResponse(BaseModel):
     pairs: list[LoreDuplicatePair]
 
 
-class SummarizeChannelRequest(BaseModel):
+class TranscriptMessage(BaseModel):
+    name: str
+    content: str
+
+
+class SummarizeTranscriptRequest(BaseModel):
     guild_id: int
-    channel_id: int
+    messages: list[TranscriptMessage]
 
 
-class SummarizeChannelResponse(BaseModel):
+class SummarizeResponse(BaseModel):
     summarized: bool
     summary: Optional[str] = None
