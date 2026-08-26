@@ -9,6 +9,15 @@ _memory: Optional[Memory] = None
 
 
 def _build_config() -> dict:
+    vector_store_config = {
+        "collection_name": config.QDRANT_COLLECTION,
+        "host": config.QDRANT_HOST,
+        "port": config.QDRANT_PORT,
+        "embedding_model_dims": config.QDRANT_EMBED_DIMS,
+    }
+    if config.QDRANT_API_KEY:
+        vector_store_config["api_key"] = config.QDRANT_API_KEY
+
     return {
         "llm": {
             "provider": "ollama",
@@ -31,12 +40,7 @@ def _build_config() -> dict:
         },
         "vector_store": {
             "provider": "qdrant",
-            "config": {
-                "collection_name": config.QDRANT_COLLECTION,
-                "host": config.QDRANT_HOST,
-                "port": config.QDRANT_PORT,
-                "embedding_model_dims": config.QDRANT_EMBED_DIMS,
-            },
+            "config": vector_store_config,
         },
         "version": "v1.1",
     }

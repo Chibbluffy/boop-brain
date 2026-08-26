@@ -20,6 +20,7 @@ QDRANT_HOST        = os.getenv("QDRANT_HOST", "qdrant")
 QDRANT_PORT         = int(os.getenv("QDRANT_PORT", "6333"))
 QDRANT_COLLECTION   = os.getenv("QDRANT_COLLECTION", "boopbot_lore")
 QDRANT_EMBED_DIMS   = int(os.getenv("QDRANT_EMBED_DIMS", "768"))
+QDRANT_API_KEY      = os.getenv("QDRANT_API_KEY", "")
 
 REDIS_HOST = os.getenv("REDIS_HOST", "redis")
 REDIS_PORT = int(os.getenv("REDIS_PORT", "6379"))
