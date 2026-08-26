@@ -11,8 +11,7 @@ _memory: Optional[Memory] = None
 def _build_config() -> dict:
     vector_store_config = {
         "collection_name": config.QDRANT_COLLECTION,
-        "host": config.QDRANT_HOST,
-        "port": config.QDRANT_PORT,
+        "url": config.QDRANT_URL,
         "embedding_model_dims": config.QDRANT_EMBED_DIMS,
     }
     if config.QDRANT_API_KEY:

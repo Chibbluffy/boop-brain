@@ -21,6 +21,11 @@ QDRANT_PORT         = int(os.getenv("QDRANT_PORT", "6333"))
 QDRANT_COLLECTION   = os.getenv("QDRANT_COLLECTION", "boopbot_lore")
 QDRANT_EMBED_DIMS   = int(os.getenv("QDRANT_EMBED_DIMS", "768"))
 QDRANT_API_KEY      = os.getenv("QDRANT_API_KEY", "")
+# Built from host/port with an explicit scheme (overridable via QDRANT_URL for e.g.
+# Qdrant Cloud). Passing this as "url" rather than bare host/port matters once an
+# api_key is set: qdrant-client defaults https=True whenever an api_key is present
+# and no scheme says otherwise, which breaks a plain-http self-hosted Qdrant.
+QDRANT_URL = os.getenv("QDRANT_URL", f"http://{QDRANT_HOST}:{QDRANT_PORT}")
 
 REDIS_HOST = os.getenv("REDIS_HOST", "redis")
 REDIS_PORT = int(os.getenv("REDIS_PORT", "6379"))
